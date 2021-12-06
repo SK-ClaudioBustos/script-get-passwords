@@ -1,22 +1,24 @@
+# _*_ coding: utf-8 _*_
 import subprocess
 from colorama import Fore,init
-init()
+from prettytable import PrettyTable
 
+'''se obtiene toda la informacion soltada por el comando correspondiente de CMD '''
 def obtenerPerfiles():
     perfiles =  subprocess.run("netsh wlan show profiles",stdout=subprocess.PIPE,shell=True,universal_newlines=True)
     return perfiles.stdout.splitlines()
 
+'''se verifica si hay por lo menos un perfil'''
 def verificarPerfiles(listaPerfiles):
     cont = 0
     for x in listaPerfiles:
         if x == "    <Ninguno>":
-            cont += 1
-    
+            cont += 1    
     if cont <= 1:
         return True
-    return False
+    return False 
 
-
+'''obtencion de los nombres de red guardados'''
 def obtenerSSID(perfiles):
     puntero = ""
     lista_de_perfiles = []
@@ -28,6 +30,7 @@ def obtenerSSID(perfiles):
         lista_de_perfiles.append(puntero[39:])
     return lista_de_perfiles
 
+'''se obtienen los passwords de redes guardadas'''
 def obtenerPassword(lista_de_perfiles):
     lista_de_contraseñas = []
     puntero = ""
@@ -35,17 +38,17 @@ def obtenerPassword(lista_de_perfiles):
     for x in range(indice_guia):
         password = subprocess.run("netsh wlan show profile name=\"" + str(lista_de_perfiles[x]) + "\" key=clear",stdout=subprocess.PIPE,shell=True,universal_newlines=True)
         aux = password.stdout.splitlines()
-        puntero = aux[32]
+        puntero = aux[32]     
         lista_de_contraseñas.append(puntero[29:])
     return lista_de_contraseñas
 
-def Mostrar(listaP,listaC):
-    final = len(listaP)
-    print()
-    print(Fore.GREEN + "|"+ Fore.YELLOW + "SSID".center(36) + Fore.GREEN + "|" + Fore.BLUE + "Password".center(28) + Fore.GREEN + "|")
-    for x in range(final):
-        print(Fore.LIGHTYELLOW_EX + " "*5 + str(listaP[x]) + " "*28 + Fore.LIGHTBLUE_EX +str(listaC[x]))
-    print()
+'''muestra la informacion obtenida'''
+def crearTabla(listaP,listaC):
+    table = PrettyTable(["SSID","PASSWORD"])
+    for ssid, password in zip(listaP,listaC):
+        if password != "":
+            table.add_row([ssid,password])
+    return table 
 
     
 def main():
@@ -53,7 +56,8 @@ def main():
     if verificarPerfiles(perfiles):
         lista_de_perfiles = obtenerSSID(perfiles)
         lista_de_contraseñas = obtenerPassword(lista_de_perfiles)
-        Mostrar(lista_de_perfiles,lista_de_contraseñas)
+        tabla = crearTabla(lista_de_perfiles,lista_de_contraseñas)
+        print(tabla)
     else:
         print()
         print(Fore.LIGHTRED_EX + "*"*10 + Fore.RED + " No hay perfiles guardados anteriormente " + Fore.LIGHTRED_EX + "*"*10)
